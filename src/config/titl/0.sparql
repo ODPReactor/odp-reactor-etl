@@ -1,0 +1,5 @@
+PREFIX a-loc:https://w3id.org/arco/ontology/location/
+
+SELECT DISTINCT ?titl WHERE {
+     ?culturalProperty a-loc:hasTimeIndexedTypedLocation ?titl .
+}

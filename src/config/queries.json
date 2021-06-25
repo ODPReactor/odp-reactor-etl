@@ -1,0 +1,11 @@
+{   
+    "https://arco.dati.beniculturali.it/sparql" : [
+        {
+            "default" : [
+                {
+                    "pattern" : "./titl/"
+                }
+            ]
+        }
+    ]
+}
