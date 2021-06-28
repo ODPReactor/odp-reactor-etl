@@ -1,21 +1,21 @@
-import { SparqlDataMapper } from "../base/repository/datamappers/SparqlDataMapper";
-import { IClient } from "../base/repository/IClient";
-import { IDataMapper } from "../base/repository/IDataMapper";
-import { IQueryBuilder } from "../base/repository/IQueryBuilder";
-import { IRepository, RepositoryInput } from "../base/repository/IRepository";
+import { IRepository, IClient, IQueryBuilder, IDataMapper, SparqlClient, SparqlDataMapper } from "odp-reactor-persistence-interface";
 import { PatternInstanceQueryBuilder } from "./PatternInstanceQueryBuilder";
 
-
+type RepositoryInput = {
+    dbClient?: SparqlClient | IClient
+    dataMapper?: SparqlDataMapper | IDataMapper
+    queryBuilder?: IQueryBuilder
+}
 
 export class PatternInstanceRepository implements IRepository {
 
-    dbClient: IClient | undefined;
-    dataMapper: IDataMapper;
+    dbClient: SparqlClient | IClient;
+    dataMapper: SparqlDataMapper | IDataMapper;
     queryBuilder: IQueryBuilder;
 
 
     constructor(input : RepositoryInput) {
-        this.dbClient = input.dbClient || undefined
+        this.dbClient = input.dbClient || new SparqlClient()
         this.dataMapper = input.dataMapper || new SparqlDataMapper()
         this.queryBuilder = input.queryBuilder || new PatternInstanceQueryBuilder()
     }

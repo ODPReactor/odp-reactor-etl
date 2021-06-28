@@ -1,6 +1,6 @@
 import express, {NextFunction, Request, Response} from "express"
 import {loadEnv} from "./loadEnv";
-import {ArCoETLRouter} from "./route/ArCoETLRouter";
+import {ETLRouter} from "./route/ETLRouter";
 
 loadEnv()
 
@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3000
 function initializeServer() {
 
     const app = express()
-    app.use(ArCoETLRouter)
+    app.use(ETLRouter)
     return {app}
 }
 

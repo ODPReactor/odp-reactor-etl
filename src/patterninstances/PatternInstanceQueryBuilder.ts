@@ -1,4 +1,4 @@
-import { IQueryBuilder } from "../base/repository/IQueryBuilder";
+import { IQueryBuilder } from "odp-reactor-persistence-interface";
 
 export class PatternInstanceQueryBuilder implements IQueryBuilder {
 
