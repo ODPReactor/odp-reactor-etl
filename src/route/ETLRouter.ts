@@ -52,11 +52,11 @@ PREFIX a-dd: <https://w3id.org/arco/ontology/denotative-description/>
 SELECT DISTINCT 
     ?culturalProperty 
     ?titl
-    (SAMPLE(?tITLLabel) as ?tITLLabel) 
+    ?tITLLabel 
     ?locationType 
-    (SAMPLE(?locationTypeLabel) as ?locationTypeLabel)
+    ?locationTypeLabel
     ?lat ?long ?addressLabel ?startTime ?endTime
-    (SAMPLE(?cPropLabel) as ?cPropLabel) 
+    cPropLabel 
 WHERE {
 
     ?culturalProperty a-loc:hasTimeIndexedTypedLocation ?titl .
@@ -141,11 +141,11 @@ WHERE {
                 
                 SELECT DISTINCT 
     ?culturalProperty 
-    (SAMPLE(?tITLLabel) as ?tITLLabel) 
+    ?tITLLabel 
     ?locationType 
-    (SAMPLE(?locationTypeLabel) as ?locationTypeLabel)
+    ?locationTypeLabel
     ?lat ?long ?addressLabel ?startTime ?endTime
-    (SAMPLE(?cPropLabel) as ?cPropLabel) 
+    ?cPropLabel 
 WHERE {
 
     ?culturalProperty a-loc:hasTimeIndexedTypedLocation <${titl}> .
