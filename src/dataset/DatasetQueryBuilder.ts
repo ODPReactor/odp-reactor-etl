@@ -1,12 +1,87 @@
 import { IQueryBuilder } from "odp-reactor-persistence-interface";
+import { ODPRSparqlQueryBuilder } from "../sparql/SparqlQueryBuilder";
+import { Dataset } from "./Dataset";
 
-export class DatasetQueryBuilder implements IQueryBuilder {
+export class DatasetQueryBuilder extends ODPRSparqlQueryBuilder implements IQueryBuilder {
 
     graph: string;
 
     constructor(graph : string) {
+        super()
         this.graph = graph
     }
+
+    createDataset(dataset: Dataset) : string {
+      return `
+        ${this.addPrefixes()}
+
+        INSERT DATA {
+          GRAPH <${this.graph}> {
+              odpr:${dataset.id} a odpr:Dataset ;
+                               odpr:sparqlEndpoint """${dataset.sparqlEndpoint}""" ;
+                               odpr:datasetGraph """${dataset.graph}""" ;
+                               odpr:label """${dataset.label}""" ;
+                               odpr:indexed """${dataset.indexed}""";
+                               odpr:id """${dataset.id}""" .
+          }
+      }
+      `
+    }
+
+    getAllDatasets() : string {
+      return `
+        ${this.addPrefixes()}
+
+        SELECT ?id ?sparqlEndpoint ?label ?graphName ?indexed WHERE {
+            GRAPH <${this.graph}> {
+                ?datasetId a odpr:Dataset ;
+                  odpr:sparqlEndpoint ?sparqlEndpoint ;
+                  odpr:label ?label ;
+                  odpr:id ?id .
+
+                  OPTIONAL {
+                    ?datasetId a odpr:Dataset ; 
+                      odpr:datasetGraph ?graph2B .
+                  }
+                  BIND ( IF (BOUND ( ?graph2B ), ?graph2B, "" )  as ?graphName )
+
+                  OPTIONAL {
+                    ?datasetId a odpr:Dataset ; 
+                              odpr:indexed ?indexed2B .
+                  }
+                  BIND ( IF (BOUND ( ?indexed2B ), ?indexed2B, "" )  as ?indexed )
+            }
+        }
+    `    
+    }
+
+
+    getById(datasetId: string) {
+      return `
+          ${this.addPrefixes()}
+
+          SELECT ?id ?sparqlEndpoint ?label ?graphName ?indexed WHERE {
+              GRAPH <${this.graph}> {
+                odpr:${datasetId} a odpr:Dataset ;
+                  odpr:sparqlEndpoint ?sparqlEndpoint ;
+                  odpr:label ?label ;
+                  odpr:id ?id .
+
+                  OPTIONAL {
+                    ?datasetId a odpr:Dataset ; 
+                              odpr:datasetGraph ?graph2B .
+                  }
+                  BIND ( IF (BOUND ( ?graph2B ), ?graph2B, "" )  as ?graphName ) .
+
+                  OPTIONAL {
+                    ?datasetId a odpr:Dataset ; 
+                              odpr:indexed ?indexed2B .
+                  }
+                  BIND ( IF (BOUND ( ?indexed2B ), ?indexed2B, "" )  as ?indexed ) .
+          }
+        }
+      `
+  }
 
     getConfigByDatasetId(datasetId : string) {
         return `

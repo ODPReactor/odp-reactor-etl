@@ -3,14 +3,14 @@ import { PatternInstanceQueryBuilder } from "./PatternInstanceQueryBuilder";
 
 type RepositoryInput = {
     dbClient?: SparqlClient | IClient
-    dataMapper?: SparqlDataMapper | IDataMapper
+    dataMapper?: SparqlDataMapper 
     queryBuilder?: IQueryBuilder
 }
 
 export class PatternInstanceRepository implements IRepository {
 
     dbClient: SparqlClient | IClient;
-    dataMapper: SparqlDataMapper | IDataMapper;
+    dataMapper: SparqlDataMapper 
     queryBuilder: IQueryBuilder;
 
 

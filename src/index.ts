@@ -2,6 +2,7 @@ import express, {NextFunction, Request, Response} from "express"
 import {loadEnv} from "./loadEnv";
 import {QueryRouter} from "./route/QueryRouter";
 import cors from "cors"
+import { DatasetRouter } from "./route/DatasetRouter";
 
 loadEnv()
 
@@ -30,6 +31,8 @@ function initializeServer() {
 
 
     app.use(QueryRouter)
+    app.use(DatasetRouter)
+    
     return {app}
 }
 

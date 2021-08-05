@@ -1,29 +1,35 @@
-import { IClient, IRepository, SparqlClient } from "odp-reactor-persistence-interface";
+import { IClient, IRepository, SparqlClient, SparqlDataMapper } from "odp-reactor-persistence-interface";
 import { UrlParser } from "../url/UrlParser";
 import { Dataset } from "./Dataset";
+import { DatasetDataMapper } from "./DatasetDataMapper";
 import { DatasetQueryBuilder } from "./DatasetQueryBuilder";
 
 type CreateDatasetRepositoryInput = {
     datasetQueryBuilder? : DatasetQueryBuilder
-    dbClient : SparqlClient
+    dbClient? : SparqlClient
+    dataMapper? : DatasetDataMapper
 }
 
 export class DatasetRepository implements IRepository {
 
 
-    dbClient: IClient;
+    dbClient: SparqlClient;
     datasetQueryBuilder: DatasetQueryBuilder;
     urlParser: UrlParser;
+    dataMapper: DatasetDataMapper;
 
-    constructor(dbClient : IClient, datasetQueryBuilder: DatasetQueryBuilder) {
+
+    constructor(dbClient : SparqlClient, datasetQueryBuilder: DatasetQueryBuilder, dataMapper : DatasetDataMapper) {
         this.dbClient = dbClient
         this.datasetQueryBuilder = datasetQueryBuilder
         this.urlParser = new UrlParser()
+        this.dataMapper = dataMapper
     }
 
     static create({
         dbClient,
-        datasetQueryBuilder
+        datasetQueryBuilder,
+        dataMapper
     } : CreateDatasetRepositoryInput) {
         if (!dbClient) {
 
@@ -43,64 +49,74 @@ export class DatasetRepository implements IRepository {
             datasetQueryBuilder = new DatasetQueryBuilder(dbClient.graph)
         }
 
-        return new DatasetRepository(dbClient, datasetQueryBuilder)
-    }
-
-    async getDatasetById(datasetId : string) {
-
-        const configRes = await this.dbClient.sendRequest(
-            this.datasetQueryBuilder.getConfigByDatasetId(datasetId)
-        );
-        const config = configRes[0];
-
-        const sparqlEndpoint = `${config.protocol}://${config.host}${
-            config.port != '' ? `:${config.port}` : ''
-        }${config.path}`
-
-        const graph = config.graph
-
-        return Dataset.create({
-            datasetId: datasetId, 
-            sparqlEndpoint: sparqlEndpoint, 
-            graph: graph}
-            )
-    }
-
-    async getDatasetBySparqlEndpointAndGraph(sparqlEndpoint : string, graph : string) {
- 
-        
-        const { host, sparqlPath } = this.getHostAndPathBySparqlEndpoint(sparqlEndpoint)
-
-        if (!host || !sparqlPath) {
-            throw new Error(`Cannot extract host and sparql path from sparql endpoint string: ${sparqlEndpoint}`)
+        if (!dataMapper) {
+            dataMapper = new DatasetDataMapper()
         }
 
-        const configRes = await this.dbClient.sendRequest(
-            this.datasetQueryBuilder.getConfigBySparqlEndpointHostAndPathAndGraph(
-                {
-                    host: host,
-                    sparqlPath: sparqlPath,
-                    graph: graph
-                }
-            )
-        );
-        const config = configRes[0];
 
-        return config ? Dataset.create({
-            datasetId: config.datasetId,
-            sparqlEndpoint: sparqlEndpoint,
-            graph: graph
+        return new DatasetRepository(dbClient, datasetQueryBuilder, dataMapper)
+    }
+
+    async create(dataset: Dataset) : Promise<void> {
+        await this.dbClient.sendUpdateRequest({
+            query: this.datasetQueryBuilder.createDataset(dataset)
+        })
+    }
+
+    async getAll(noCache: boolean=true) : Promise<Dataset[]> {
+        if (noCache) {
+            await this.dbClient.invalidateCache()
+        }
+        const datasetBindings = await this.dbClient.sendRequest({
+            query: this.datasetQueryBuilder.getAllDatasets()
+        })
+
+
+        const sparqlDataMapper = new SparqlDataMapper()
+
+        const queryResults = await sparqlDataMapper.parseBindings(datasetBindings)
+
+
+        return queryResults.map((queryResult: any) => {
+            return this.dataMapper.toEntity({
+                id: queryResult.id,
+                label: queryResult.label,
+                sparqlEndpoint: queryResult.sparqlEndpoint,
+                graph: queryResult.graphName,
+                indexed: (queryResult.indexed === "true")
+            })        
+        })
+    }
+
+    async getById(datasetId: string, noCache : boolean=true) : Promise<Dataset | undefined> {
+        if (noCache) {
+            await this.dbClient.invalidateCache()
+        }
+        const queryBindings = await this.dbClient.sendRequest({
+            query: this.datasetQueryBuilder.getById(datasetId) 
+        })
+        const sparqlDataMapper = new SparqlDataMapper()
+        const queryResults = await sparqlDataMapper.parseBindings(queryBindings)
+
+        return queryResults[0] ? this.dataMapper.toEntity({
+            id: queryResults[0].id,
+            label: queryResults[0].label,
+            graph: queryResults[0].graphName,
+            sparqlEndpoint: queryResults[0].sparqlEndpoint,
+            indexed: (queryResults[0].indexed === "true")
         }) : undefined
     }
 
-    getHostAndPathBySparqlEndpoint(sparqlEndpoint : string) {
-        const host = this.urlParser.getHost(sparqlEndpoint);
-        const sparqlPath = this.urlParser.getPath(sparqlEndpoint);
-        return {
-            host: host,
-            sparqlPath: sparqlPath
-        }
-    }
+    // async delete(queryId: string) : Promise<void> {
+    //     await this.dbClient.sendUpdateRequest({
+    //         query: this.queryBuilder.deleteQuery(queryId)
+    //     })
+    // }
 
+    // async update(query: Query) : Promise<void> { 
+    //     await this.dbClient.sendUpdateRequest({
+    //         query: this.queryBuilder.updateQuery(query)
+    //     })
+    // }
 
 }

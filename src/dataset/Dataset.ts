@@ -1,26 +1,60 @@
+import { nanoid } from "nanoid"
+import { Pattern } from "../pattern/Pattern"
+import { DatasetDTO } from "./DatasetDataMapper"
+
 type CreateDatasetInput = {
-    datasetId: string,
+    id?: string,
     sparqlEndpoint: string,
-    graph: string
+    graph: string,
+    label: string,
+    indexed?: boolean,
+    patterns?: Pattern[]
 }
 
 export class Dataset {
-    constructor(private datasetId : string, private sparqlEndpoint : string, private graph : string) {
+
+    patterns?: Pattern[]
+    indexed: boolean
+    graph: string
+    label: string
+    sparqlEndpoint: string
+    id: string
+
+    constructor(id : string, sparqlEndpoint : string, graph : string, label:string, indexed: boolean, patterns: Pattern[]) {
+        this.id = id
+        this.sparqlEndpoint = sparqlEndpoint
+        this.label = label
+        this.graph = graph
+        this.indexed = indexed
+        this.patterns = patterns
     }
     static create({
-        datasetId,
+        id,
         sparqlEndpoint,
-        graph
+        graph,
+        label,
+        indexed,
+        patterns
     } : CreateDatasetInput) {
-        return new Dataset(datasetId,sparqlEndpoint,graph)
+        return new Dataset(id || nanoid(),sparqlEndpoint,graph,label, indexed || false, patterns || [])
     }
-    getDataset() : string {
-        return this.datasetId
+    getId() : string {
+        return this.id
     }
     getSparqlEndpoint() : string {
         return this.sparqlEndpoint
     }
     getGraph() : string {
         return this.graph
+    }
+    toJSON() : DatasetDTO {
+        return {
+            id: this.id,
+            sparqlEndpoint: this.sparqlEndpoint,
+            graph: this.graph,
+            indexed: this.indexed,
+            label: this.label,
+            patterns: this.patterns || undefined
+        }
     }
 }
