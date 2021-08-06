@@ -81,7 +81,26 @@ export class DatasetQueryBuilder extends ODPRSparqlQueryBuilder implements IQuer
           }
         }
       `
-  }
+    }
+
+    deleteQuery(datasetId: string) {
+          return `
+    
+          ${this.addPrefixes()}
+    
+          DELETE { 
+              GRAPH <${this.graph}> {
+                  odpr:${datasetId} ?p ?o . 
+                  }
+              }
+          WHERE {
+                  GRAPH <${this.graph}> {
+                  odpr:${datasetId} a odpr:Dataset .
+                  odpr:${datasetId} ?p ?o .
+              }
+          }
+      `
+    }
 
     getConfigByDatasetId(datasetId : string) {
         return `

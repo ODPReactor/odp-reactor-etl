@@ -1,5 +1,6 @@
 import { nanoid } from "nanoid"
 import { SparqlClient, SparqlGraphTestHelper } from "odp-reactor-persistence-interface"
+import { catchUnpredictableErrorsFromDependency } from "../test/catchUnpredictableErrorsFromDependency"
 import { Dataset } from "./Dataset"
 import { DatasetRepository } from "./DatasetRepository"
 
@@ -23,8 +24,11 @@ describe("Test for dataset repository", ()=>{
             dbClient: new SparqlClient(testSparqlEndpoint, testConfigGraph)
         })
     
-        console.log("create graph:", testConfigGraph)
-        await graphTester.createGraph(testConfigGraph)
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await graphTester.createGraph(testConfigGraph) })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
 
         const sparqlEndpoint = "https://dpedia.org/sparql"
 
@@ -34,9 +38,20 @@ describe("Test for dataset repository", ()=>{
             graph: "default"
         })
 
-        await datasetRepository.create(dataset)
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{         await datasetRepository.create(dataset)
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
 
-        await graphTester.cleanGraph(testConfigGraph)
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{         await graphTester.cleanGraph(testConfigGraph)
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+
+        
 
     })
 
@@ -48,8 +63,11 @@ describe("Test for dataset repository", ()=>{
             dbClient: new SparqlClient(testSparqlEndpoint, testConfigGraph)
         })
 
-        console.log("create graph:", testConfigGraph)
-        await graphTester.createGraph(testConfigGraph)
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await graphTester.createGraph(testConfigGraph) })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
 
         const se1 = "https://dbpedia.org/sparql"
         const se2 = "https://wikidata.org/sparql"
@@ -67,18 +85,39 @@ describe("Test for dataset repository", ()=>{
             label: "WikiData"
         })
 
-        await datasetRepository.create(d1)
-        await datasetRepository.create(d2)
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await datasetRepository.create(d1) })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
 
-        const datasets = await datasetRepository.getAll()
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await datasetRepository.create(d2) })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+        let datasets: any
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{         datasets = await datasetRepository.getAll()
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+        
+        
+
 
         expect(datasets).toBeDefined()
         expect(datasets).toHaveLength(2)
 
-        await graphTester.cleanGraph(testConfigGraph)
 
-        await graphTester.createGraph(testConfigGraph)
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{        await graphTester.cleanGraph(testConfigGraph)
 
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+    
     })
 
     test("It gets a single dataset", async() => {
@@ -88,8 +127,15 @@ describe("Test for dataset repository", ()=>{
             dbClient: new SparqlClient(testSparqlEndpoint, testConfigGraph)
         })
 
-        console.log("create graph:", testConfigGraph)
-        await graphTester.createGraph(testConfigGraph)
+        
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{        await graphTester.createGraph(testConfigGraph)
+
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
 
         const se1 = "https://dbpedia.org/sparql"
 
@@ -100,9 +146,26 @@ describe("Test for dataset repository", ()=>{
             label: "DBPedia"
         })
 
-        await datasetRepository.create(d1)
 
-        const createdDataset = await datasetRepository.getById(d1.id)
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{        await datasetRepository.create(d1)
+
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+
+        let createdDataset : any
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{  createdDataset = await datasetRepository.getById(d1.id)
+
+
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+        
+
         expect(createdDataset).toBeDefined()
         expect(createdDataset?.id).toBe(d1.id)
         expect(createdDataset?.sparqlEndpoint).toBe(d1.sparqlEndpoint)
@@ -110,6 +173,95 @@ describe("Test for dataset repository", ()=>{
         expect(createdDataset?.label).toBe(d1.label)
         expect(createdDataset?.indexed).toBeFalsy()
 
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{        await graphTester.cleanGraph(testConfigGraph)
+
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+    })
+
+    test("It deletes a dataset", async () => {
+        const testConfigGraph = graphTester.getUniqueGraphId()
+        const datasetRepository = DatasetRepository.create({
+            dbClient: new SparqlClient(testSparqlEndpoint, testConfigGraph)
+        })
+
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{        await graphTester.createGraph(testConfigGraph)
+
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+
+        const se1 = "https://dbpedia.org/sparql"
+
+
+        const d1 = Dataset.create({
+            sparqlEndpoint: se1,
+            graph: "https://dbpedia",
+            label: "DBPedia"
+        })
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{                await datasetRepository.create(d1)
+
+
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+
+        let createdDataset
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{              createdDataset = await datasetRepository.getById(d1.id)
+
+
+
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+
+
+        expect(createdDataset).toBeDefined()
+
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{                      await datasetRepository.delete(d1.id)
+
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+
+
+
+        let deletedDataset
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{                              deletedDataset = await datasetRepository.getById(d1.id)
+
+
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+
+
+        expect(deletedDataset).toBeUndefined()
+
+
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{        await graphTester.cleanGraph(testConfigGraph)
+
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
     })
 
 })

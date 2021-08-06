@@ -1,10 +1,12 @@
 import { nanoid } from "nanoid"
 import { SparqlClient, SparqlGraphTestHelper } from "odp-reactor-persistence-interface"
+import { catchUnpredictableErrorsFromDependency } from "../test/catchUnpredictableErrorsFromDependency"
 import { Query } from "./Query"
 import { QueryRepository } from "./QueryRepository"
 
 describe("Test for query repository", ()=>{
 
+ 
 
     const testSparqlEndpoint = process.env.TEST_SPARQL_ENDPOINT_URI
     if (!testSparqlEndpoint) {
@@ -18,29 +20,40 @@ describe("Test for query repository", ()=>{
 
     test("It creates a query", async () => {
 
+
+            const testConfigGraph = graphTester.getUniqueGraphId()
+
+            const queryRepository = QueryRepository.create({
+                dbClient: new SparqlClient(testSparqlEndpoint, testConfigGraph)
+            })
         
+            if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await graphTester.createGraph(testConfigGraph)})) {
+                console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+                return
+            }
 
-        const testConfigGraph = graphTester.getUniqueGraphId()
-        const queryRepository = QueryRepository.create({
-            dbClient: new SparqlClient(testSparqlEndpoint, testConfigGraph)
-        })
-    
-        console.log("create graph:", testConfigGraph)
-        await graphTester.createGraph(testConfigGraph)
+            const queryString = `SELECT ?a ?b ?c WHERE {
+                ?a ?b ?c
+            }`
+            const query = Query.create({
+                string : queryString,
+                patternUri : "https://example.com/collection-pattern",
+                patternLabel : "The collection pattern!"
+            })
 
 
-        const queryString = `SELECT ?a ?b ?c WHERE {
-            ?a ?b ?c
-        }`
-        const query = Query.create({
-            string : queryString,
-            patternUri : "https://example.com/collection-pattern",
-            patternLabel : "The collection pattern!"
-        })
+            if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await queryRepository.create(query) })) {
+                console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+                return
+            }
+            
 
-        await queryRepository.create(query)
+            if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await graphTester.cleanGraph(testConfigGraph) })) {
+                console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+                return
+            }
+            
 
-        await graphTester.cleanGraph(testConfigGraph)
 
     })
 
@@ -52,8 +65,10 @@ describe("Test for query repository", ()=>{
             dbClient: new SparqlClient(testSparqlEndpoint, testConfigGraph)
         })
 
-        console.log("create graph:", testConfigGraph)
-        await graphTester.createGraph(testConfigGraph)
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await graphTester.createGraph(testConfigGraph)})) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
 
         const queryString = `SELECT ?a ?b ?c WHERE {
             ?a ?b ?c
@@ -70,17 +85,41 @@ describe("Test for query repository", ()=>{
             patternLabel : "The partof pattern!"
         })
 
-        await queryRepository.create(query1)
-        await queryRepository.create(query2)
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await queryRepository.create(query1) })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
 
-        const queries = await queryRepository.getAll()
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await queryRepository.create(query2) })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+        
+       
+
+        let queries;
+
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ queries = await queryRepository.getAll() })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
 
         expect(queries).toBeDefined()
         expect(queries).toHaveLength(2)
 
-        await graphTester.cleanGraph(testConfigGraph)
 
-        await graphTester.createGraph(testConfigGraph)
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await graphTester.cleanGraph(testConfigGraph) })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await graphTester.createGraph(testConfigGraph)})) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
 
         const uniqueQuery = Query.create({
             string : queryString,
@@ -88,10 +127,21 @@ describe("Test for query repository", ()=>{
             patternLabel : "The partof pattern!"
         })
 
-        await queryRepository.create(uniqueQuery)
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await queryRepository.create(uniqueQuery) })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+        
 
 
-        const singleQueries = await queryRepository.getAll()
+        let singleQueries : any;
+
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ singleQueries =  await queryRepository.getAll() })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
 
         const q = singleQueries[0]
 
@@ -101,7 +151,11 @@ describe("Test for query repository", ()=>{
         expect(q.patternUri).toBe("https://example.com/partof-pattern")
         expect(q.string).toBe(queryString)
 
-        await graphTester.cleanGraph(testConfigGraph)
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await graphTester.cleanGraph(testConfigGraph) })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
 
     })
 
@@ -113,9 +167,13 @@ describe("Test for query repository", ()=>{
             dbClient: new SparqlClient(testSparqlEndpoint, testConfigGraph)
         })
 
-        console.log("create graph:", testConfigGraph)
 
-        await graphTester.createGraph(testConfigGraph)
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await graphTester.createGraph(testConfigGraph) })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+        
 
         const queryString = `SELECT ?a ?b ?c WHERE {
             ?a ?b ?c
@@ -133,10 +191,23 @@ describe("Test for query repository", ()=>{
             patternLabel : "The partof pattern!"
         })
 
-        await queryRepository.create(query1)
-        await queryRepository.create(query2)
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await queryRepository.create(query1) })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+        
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await queryRepository.create(query2) })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
 
-        const queries = await queryRepository.getAll()
+        
+        let queries : any
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ queries = await queryRepository.getAll() })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
 
         expect(queries).toBeDefined()
         expect(queries).toHaveLength(2)
@@ -144,17 +215,27 @@ describe("Test for query repository", ()=>{
         const queryToDelete = queries[0]
         const queryToKeep = queries[1]
 
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await queryRepository.delete(queryToDelete.id) })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
 
-        await queryRepository.delete(queryToDelete.id)
 
-        const refetchedQueries = await queryRepository.getAll()
+        let refetchedQueries : any
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ refetchedQueries = await queryRepository.getAll() })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
 
         expect(refetchedQueries).toBeDefined()
         expect(refetchedQueries).toHaveLength(1)
         expect(refetchedQueries[0].id).toBe(queryToKeep.id)
 
-        await graphTester.cleanGraph(testConfigGraph)
 
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await graphTester.cleanGraph(testConfigGraph) })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
 
     })
 
@@ -166,9 +247,13 @@ describe("Test for query repository", ()=>{
             dbClient: new SparqlClient(testSparqlEndpoint, testConfigGraph)
         })
 
-        console.log("create graph:", testConfigGraph)
 
-        await graphTester.createGraph(testConfigGraph)
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await graphTester.createGraph(testConfigGraph) })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+       
 
         const queryString = `SELECT ?a ?b ?c WHERE {
             ?a ?b ?c
@@ -186,17 +271,39 @@ describe("Test for query repository", ()=>{
             patternLabel : "The partof pattern!"
         })
 
-        await queryRepository.create(query1)
-        await queryRepository.create(query2)
 
-        const queries = await queryRepository.getAll()
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await queryRepository.create(query1) })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await queryRepository.create(query2) })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+
+        let queries : any
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ queries = await queryRepository.getAll() })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
 
         expect(queries).toBeDefined()
         expect(queries).toHaveLength(2)
 
         const queryToRetrieve = queries[0]
 
-        const queryById = await queryRepository.getById(queryToRetrieve.id)
+
+        let queryById : any
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ queryById = await queryRepository.getById(queryToRetrieve.id) })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+
 
         expect(queryById).toBeDefined()
         expect(queryById?.id).toBe(queryToRetrieve.id)
@@ -204,7 +311,12 @@ describe("Test for query repository", ()=>{
         expect(queryById?.patternLabel).toBe(queryToRetrieve.patternLabel)
         expect(queryById?.string).toBe(queryToRetrieve.string)
 
-        await graphTester.cleanGraph(testConfigGraph)
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{         await graphTester.cleanGraph(testConfigGraph)
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
 
 
     })
@@ -217,8 +329,12 @@ describe("Test for query repository", ()=>{
             dbClient: new SparqlClient(testSparqlEndpoint, testConfigGraph)
         })
 
-        console.log("create graph:", testConfigGraph)
-        await graphTester.createGraph(testConfigGraph)
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{         await graphTester.createGraph(testConfigGraph) })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+       
 
         const queryString = `SELECT ?a ?b ?c WHERE {
             ?a ?b ?c
@@ -229,9 +345,18 @@ describe("Test for query repository", ()=>{
             patternLabel : "The collection pattern!"
         })
 
-        await queryRepository.create(query1)
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{  await queryRepository.create(query1) })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
 
-        const queries = await queryRepository.getAll()
+        let queries : any
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{  queries = await queryRepository.getAll()
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
 
         const oldQuery = queries[0]
 
@@ -246,9 +371,21 @@ describe("Test for query repository", ()=>{
             string : queryString
         })
 
-        await queryRepository.update(updateQuery1)
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await queryRepository.update(updateQuery1)
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
 
-        const refetchedQueries = await queryRepository.getAll()
+
+
+
+        let refetchedQueries : any
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ refetchedQueries = await queryRepository.getAll()
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
 
         const newQuery = refetchedQueries[0]
 
@@ -268,7 +405,14 @@ describe("Test for query repository", ()=>{
             patternLabel : "The partof pattern!"
         })
 
-        await queryRepository.create(query2)
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await queryRepository.create(query2)
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+        
 
         const updateQuery2 = Query.create({
             id: customId,
@@ -277,15 +421,42 @@ describe("Test for query repository", ()=>{
             patternLabel: "Update partof pattern!"
         })
 
-        await queryRepository.update(updateQuery2)
 
-        const allQueries = await queryRepository.getAll()
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await queryRepository.update(updateQuery2)
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+
+        let allQueries : any
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ allQueries = await queryRepository.getAll()
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+        
 
         expect(allQueries).toBeDefined()
         expect(allQueries).toHaveLength(2)
 
-        const q1 = await queryRepository.getById(newQuery.id)
-        const q2 = await queryRepository.getById(customId)
+        let q1 : any
+        let q2 : any
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ q1 = await queryRepository.getById(newQuery.id)
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ q2 = await queryRepository.getById(customId)
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
 
         expect(q1?.patternLabel).toBe(newPatternLabel)
 
@@ -293,7 +464,13 @@ describe("Test for query repository", ()=>{
         expect(q2?.string).toBe(queryString)
         expect(q2?.patternLabel).toBe("Update partof pattern!")
 
-        await graphTester.cleanGraph(testConfigGraph)
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ await graphTester.cleanGraph(testConfigGraph)
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+        
 
 
     })

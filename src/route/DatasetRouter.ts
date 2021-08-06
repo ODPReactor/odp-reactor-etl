@@ -2,6 +2,8 @@ import express, {Request, Response} from "express"
 import {json} from "body-parser"
 import { GetAllDatasetsService } from "../dataset/service/GetAllDatasetsService"
 import { CreateDatasetService } from "../dataset/service/CreateDatasetService"
+import { DeleteDatasetService, DeleteDatasetServiceStatusEnum } from "../dataset/service/DeleteDatasetService"
+import { GetDatasetByIdService } from "../dataset/service/GetDatasetByIdService"
 
 
 const DatasetRouter = express.Router()
@@ -67,39 +69,67 @@ DatasetRouter.post("/datasets", async (req: Request<{}, {}, {
 
 })
 
-// DatasetRouter.get("/datasets/:datasetId", async (req: Request<{
-//     datasetId: string
-// }, {}, {
+DatasetRouter.delete("/datasets/:datasetId", async (req: Request<{
+    datasetId: string
+}, {}, {
+}>, res: Response) => {
 
-// }>, res: Response) => {
+    console.log(req.params)
 
-//     console.log(req.params)
+    if (!req.params || !req.params.datasetId) {
+        return res.send({
+            status: RouterApiStatus.ERROR,
+            msg: "Parameters not valid"
+        })
+    }
 
-//     if (!req.params.datasetId) {
-//         return res.send({
-//             status: RouterApiStatus.ERROR,
-//             msg: "Parameters not valid"
-//         })
-//     }
+    const deleteDatasetService = new DeleteDatasetService()
 
-//     const getQueryByIdService = new GetQueryByIdService()
+    const result = await deleteDatasetService.handle({ id: req.params.datasetId })
 
-//     const result = await getQueryByIdService.handle({
-//        queryId: req.params.queryId
-//     })
+    result.status === DeleteDatasetServiceStatusEnum.FAILED ? res.send({
+        status: RouterApiStatus.ERROR,
+        msg: "Error while deleting dataset"
+    }) : res.send({
+        status: RouterApiStatus.OK,
+        datasets: result.datasets
+    })
 
-//     if (result.status && result.query) {
-//         return res.send({
-//             query : result.query,
-//             status : RouterApiStatus.OK
-//         })    
-//     } else {
-//         return res.send({
-//             status: RouterApiStatus.ERROR,
-//             msg: "Query not found"
-//         })
-//     }
-// })
+})
+
+DatasetRouter.get("/datasets/:datasetId", async (req: Request<{
+    datasetId: string
+}, {}, {
+
+}>, res: Response) => {
+
+    console.log(req.params)
+
+    if (!req.params.datasetId) {
+        return res.send({
+            status: RouterApiStatus.ERROR,
+            msg: "Parameters not valid"
+        })
+    }
+
+    const getDatasetByIdService = new GetDatasetByIdService()
+
+    const result = await getDatasetByIdService.handle({
+       datasetId: req.params.datasetId
+    })
+
+    if (result.status && result.dataset) {
+        return res.send({
+            dataset : result.dataset,
+            status : RouterApiStatus.OK
+        })    
+    } else {
+        return res.send({
+            status: RouterApiStatus.ERROR,
+            msg: "Query not found"
+        })
+    }
+})
 
 export {
     DatasetRouter

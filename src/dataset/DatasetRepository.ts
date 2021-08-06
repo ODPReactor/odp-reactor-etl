@@ -1,4 +1,4 @@
-import { IClient, IRepository, SparqlClient, SparqlDataMapper } from "odp-reactor-persistence-interface";
+import { IRepository, SparqlClient, SparqlDataMapper } from "odp-reactor-persistence-interface";
 import { UrlParser } from "../url/UrlParser";
 import { Dataset } from "./Dataset";
 import { DatasetDataMapper } from "./DatasetDataMapper";
@@ -82,7 +82,7 @@ export class DatasetRepository implements IRepository {
                 id: queryResult.id,
                 label: queryResult.label,
                 sparqlEndpoint: queryResult.sparqlEndpoint,
-                graph: queryResult.graphName,
+                graph: queryResult.graphName && queryResult.graphName !== "undefined" ? queryResult.graphName : undefined ,
                 indexed: (queryResult.indexed === "true")
             })        
         })
@@ -101,17 +101,17 @@ export class DatasetRepository implements IRepository {
         return queryResults[0] ? this.dataMapper.toEntity({
             id: queryResults[0].id,
             label: queryResults[0].label,
-            graph: queryResults[0].graphName,
+            graph: queryResults[0].graphName && queryResults[0].graphName !== "undefined" ? queryResults[0].graphName : undefined,
             sparqlEndpoint: queryResults[0].sparqlEndpoint,
             indexed: (queryResults[0].indexed === "true")
         }) : undefined
     }
 
-    // async delete(queryId: string) : Promise<void> {
-    //     await this.dbClient.sendUpdateRequest({
-    //         query: this.queryBuilder.deleteQuery(queryId)
-    //     })
-    // }
+    async delete(datasetId: string) : Promise<void> {
+        await this.dbClient.sendUpdateRequest({
+            query: this.datasetQueryBuilder.deleteQuery(datasetId)
+        })
+    }
 
     // async update(query: Query) : Promise<void> { 
     //     await this.dbClient.sendUpdateRequest({
