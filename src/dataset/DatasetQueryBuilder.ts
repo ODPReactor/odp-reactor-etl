@@ -68,13 +68,13 @@ export class DatasetQueryBuilder extends ODPRSparqlQueryBuilder implements IQuer
                   odpr:id ?id .
 
                   OPTIONAL {
-                    ?datasetId a odpr:Dataset ; 
+                    odpr:${datasetId} a odpr:Dataset ; 
                               odpr:datasetGraph ?graph2B .
                   }
                   BIND ( IF (BOUND ( ?graph2B ), ?graph2B, "" )  as ?graphName ) .
 
                   OPTIONAL {
-                    ?datasetId a odpr:Dataset ; 
+                    odpr:${datasetId} a odpr:Dataset ; 
                               odpr:indexed ?indexed2B .
                   }
                   BIND ( IF (BOUND ( ?indexed2B ), ?indexed2B, "" )  as ?indexed ) .
@@ -100,6 +100,35 @@ export class DatasetQueryBuilder extends ODPRSparqlQueryBuilder implements IQuer
               }
           }
       `
+    }
+
+    updateQuery(dataset: Dataset) {
+      return `
+
+        ${this.addPrefixes()}
+
+        DELETE {
+            GRAPH <${this.graph}> {
+                odpr:${dataset.id} ?p ?o .
+            }
+        }
+        INSERT {
+            GRAPH <${this.graph}> {
+              odpr:${dataset.id} a odpr:Dataset ;
+                               odpr:sparqlEndpoint """${dataset.sparqlEndpoint}""" ;
+                               odpr:datasetGraph """${dataset.graph}""" ;
+                               odpr:label """${dataset.label}""" ;
+                               odpr:indexed """${dataset.indexed}""";
+                               odpr:id """${dataset.id}""" .
+            }
+        }
+        WHERE {
+            GRAPH <${this.graph}> {
+                odpr:${dataset.id} a odpr:Dataset ;
+                                 ?p ?o .
+            }
+        }
+    `
     }
 
     getConfigByDatasetId(datasetId : string) {

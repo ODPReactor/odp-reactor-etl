@@ -4,6 +4,7 @@ import { GetAllQueriesService } from "../queries/services/GetAllQueriesService"
 import { CreateQueryService } from "../queries/services/CreateQueryService"
 import { DeleteQueryService, DeleteQueryServiceStatusEnum } from "../queries/services/DeleteQueryService"
 import { GetQueryByIdService } from "../queries/services/GetQueryByIdService"
+import { UpdateQueryService } from "../queries/services/UpdateQueryService"
 
 const QueryRouter = express.Router()
 QueryRouter.use(json())
@@ -124,6 +125,41 @@ QueryRouter.delete("/queries/:queryId", async (req: Request<{
         queries: result.queries
     })
 
+})
+
+QueryRouter.put("/queries", async (req: Request<{
+}, {}, {
+    query: {
+        string: string,
+        patternUri: string,
+        patternLabel: string,
+        id: string
+    }
+}>, res: Response) => {
+    console.log(req)
+
+    if (!req.body || !req.body.query || !req.body.query.string || !req.body.query.patternLabel || !req.body.query.patternUri || !req.body.query.id ) {
+        return res.send({
+            status: RouterApiStatus.ERROR,
+            msg: "Parameters not valid"
+        })
+    }
+
+    const updateQueryService = new UpdateQueryService()
+
+    const updatedQuery = await updateQueryService.handle({ queryDTO: req.body.query})
+
+    if (!updatedQuery) {
+        res.send({
+            status: RouterApiStatus.ERROR,
+            msg: "Error while updating query"
+        })
+    }
+
+    return res.send({
+        status: RouterApiStatus.OK,
+        query: updatedQuery?.toJSON()
+    })
 })
 
 export {

@@ -113,10 +113,10 @@ export class DatasetRepository implements IRepository {
         })
     }
 
-    // async update(query: Query) : Promise<void> { 
-    //     await this.dbClient.sendUpdateRequest({
-    //         query: this.queryBuilder.updateQuery(query)
-    //     })
-    // }
+    async update(dataset: Dataset) : Promise<void> { 
+        await this.dbClient.sendUpdateRequest({
+            query: this.datasetQueryBuilder.updateQuery(dataset)
+        })
+    }
 
 }

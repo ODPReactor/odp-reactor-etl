@@ -4,6 +4,7 @@ import { GetAllDatasetsService } from "../dataset/service/GetAllDatasetsService"
 import { CreateDatasetService } from "../dataset/service/CreateDatasetService"
 import { DeleteDatasetService, DeleteDatasetServiceStatusEnum } from "../dataset/service/DeleteDatasetService"
 import { GetDatasetByIdService } from "../dataset/service/GetDatasetByIdService"
+import { UpdateDatasetService } from "../dataset/service/UpdateDatasetService"
 
 
 const DatasetRouter = express.Router()
@@ -58,7 +59,7 @@ DatasetRouter.post("/datasets", async (req: Request<{}, {}, {
     if (!createdDataset) {
         return res.send({
             status: RouterApiStatus.ERROR,
-            msg: "Error while creating query"
+            msg: "Error while creating dataset"
         })
     }
 
@@ -126,9 +127,48 @@ DatasetRouter.get("/datasets/:datasetId", async (req: Request<{
     } else {
         return res.send({
             status: RouterApiStatus.ERROR,
-            msg: "Query not found"
+            msg: "Dataset not found"
         })
     }
+})
+
+DatasetRouter.put("/datasets", async (req: Request<{
+}, {}, {
+    dataset: {
+        id: string,
+        sparqlEndpoint: string,
+        graph: string | undefined,
+        label: string,
+        indexed: boolean    
+    }
+}>, res: Response) => {
+
+
+    console.log(req.body)
+
+    if (!req.body || !req.body.dataset || !req.body.dataset.sparqlEndpoint || !req.body.dataset.id || !req.body.dataset.label ) {
+        return res.send({
+            status: RouterApiStatus.ERROR,
+            msg: "Parameters not valid"
+        })
+    }
+
+    const updatedatasetService = new UpdateDatasetService()
+
+
+    const updateddataset = await updatedatasetService.handle({ datasetDTO: req.body.dataset })
+
+    if (!updateddataset) {
+        res.send({
+            status: RouterApiStatus.ERROR,
+            msg: "Error while updating dataset"
+        })
+    }
+
+    return res.send({
+        status: RouterApiStatus.OK,
+        dataset: updateddataset?.toJSON()
+    })
 })
 
 export {

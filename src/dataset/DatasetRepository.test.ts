@@ -264,4 +264,98 @@ describe("Test for dataset repository", ()=>{
         }
     })
 
+    test("It update a dataset", async () => {
+   
+        
+        const testConfigGraph = graphTester.getUniqueGraphId()
+        const datasetRepository = DatasetRepository.create({
+            dbClient: new SparqlClient(testSparqlEndpoint, testConfigGraph)
+        })
+
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{        await graphTester.createGraph(testConfigGraph)
+
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+
+        const se1 = "https://dbpedia.org/sparql"
+
+
+        const d1 = Dataset.create({
+            sparqlEndpoint: se1,
+            graph: "https://dbpedia",
+            label: "DBPedia",
+            indexed: false
+        })
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{                await datasetRepository.create(d1)
+
+
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+
+        let createdDataset : any
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{              createdDataset = await datasetRepository.getById(d1.id)
+
+
+
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+
+
+        expect(createdDataset).toBeDefined()
+        expect(createdDataset.graph).toBe("https://dbpedia")
+        expect(createdDataset.label).toBe("DBPedia")
+        expect(createdDataset.indexed).toBeFalsy()
+        expect(createdDataset.sparqlEndpoint).toBe(se1)
+
+        const updatedDataset = Dataset.create({
+            id: d1.id,
+            sparqlEndpoint: se1,
+            graph: "https://wikidata",
+            label: "WikiData",
+            indexed: true
+        })
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{                      await datasetRepository.update(updatedDataset)
+
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+        let updateDataset : any
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{              updateDataset = await datasetRepository.getById(d1.id)
+
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+        expect(updateDataset).toBeDefined()
+        expect(updateDataset.id).toBe(d1.id)
+        expect(updateDataset.sparqlEndpoint).toBe(se1)
+        expect(updateDataset.label).toBe("WikiData")
+        expect(updateDataset.indexed).toBeTruthy()
+        expect(updateDataset.graph).toBe("https://wikidata")
+
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{        await graphTester.cleanGraph(testConfigGraph)
+
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+    })
+
 })

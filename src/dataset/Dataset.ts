@@ -2,25 +2,25 @@ import { nanoid } from "nanoid"
 import { Pattern } from "../pattern/Pattern"
 import { DatasetDTO } from "./DatasetDataMapper"
 
-type CreateDatasetInput = {
+export type CreateDatasetInput = {
     id?: string,
     sparqlEndpoint: string,
-    graph: string,
+    graph?: string | undefined,
     label: string,
     indexed?: boolean,
-    patterns?: Pattern[]
+    patterns?: Pattern[] | undefined
 }
 
 export class Dataset {
 
     patterns?: Pattern[]
     indexed: boolean
-    graph: string
+    graph: string | undefined
     label: string
     sparqlEndpoint: string
     id: string
 
-    constructor(id : string, sparqlEndpoint : string, graph : string, label:string, indexed: boolean, patterns: Pattern[]) {
+    constructor(id : string, sparqlEndpoint : string, graph : string | undefined, label:string, indexed: boolean, patterns: Pattern[]) {
         this.id = id
         this.sparqlEndpoint = sparqlEndpoint
         this.label = label
@@ -43,9 +43,6 @@ export class Dataset {
     }
     getSparqlEndpoint() : string {
         return this.sparqlEndpoint
-    }
-    getGraph() : string {
-        return this.graph
     }
     toJSON() : DatasetDTO {
         return {

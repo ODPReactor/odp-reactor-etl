@@ -6,7 +6,7 @@ import { Dataset } from "./Dataset";
 export type DatasetDTO = {
     id?: string,
     sparqlEndpoint: string,
-    graph: string,
+    graph?: string | undefined,
     indexed: boolean,
     label: string,
     patterns?: PatternDTO[]
