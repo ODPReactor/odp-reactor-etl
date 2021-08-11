@@ -61,9 +61,6 @@ InstanceExtractor
     extractInstances({query, offset, totalCount, indexName})
     loadInstances(instancesDTO, indexName) : Promise<void>
 
-
-
-
 ###################
 
 Queue: list of jobs, you can add jobs to a queue
