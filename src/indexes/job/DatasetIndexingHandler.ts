@@ -2,7 +2,7 @@ import { Queue, QueueOptions } from "bullmq";
 import { DatasetIndexingJob, DatasetIndexingJobOperations } from "./DatasetIndexingJob";
 import config from "./config";
 
-export class DatasetIndexer {
+export class DatasetIndexingHandler {
     private queue: Queue
 
     private jobName: string = "index"
