@@ -57,6 +57,14 @@ export class DatasetRepository implements IRepository {
         return new DatasetRepository(dbClient, datasetQueryBuilder, dataMapper)
     }
 
+
+
+    async addPattern() {
+
+    }
+
+
+
     async create(dataset: Dataset) : Promise<void> {
         await this.dbClient.sendUpdateRequest({
             query: this.datasetQueryBuilder.createDataset(dataset)

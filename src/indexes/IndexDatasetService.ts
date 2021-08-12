@@ -1,11 +1,17 @@
-import { query } from "express";
 import { DatasetRepository } from "../dataset/DatasetRepository";
+import { PatternInstanceRepository } from "../patterninstances/PatternInstanceRepository";
 import { Query } from "../queries/Query";
 import { QueryRepository } from "../queries/QueryRepository";
 import { InstancesExtractor } from "./InstancesExtractor";
+import { ProgressCounter } from "./progress/ProgressCounter";
 
 type IndexDatasetServiceInput = {
-    datasetId: string
+    datasetId: string,
+    options?: IndexDatasetServiceOptions
+}
+
+type IndexDatasetServiceOptions = {
+    batchSize?: number
 }
 
 type CreateIndexDatasetServiceInput = {
@@ -13,6 +19,9 @@ type CreateIndexDatasetServiceInput = {
     queryRepository? : QueryRepository,
     datasetRepository? : DatasetRepository
 }
+
+
+const DEFAULT_BATCH_SIZE = 4000
 
 export class IndexDatasetService {
 
@@ -33,9 +42,13 @@ export class IndexDatasetService {
         )
     }
 
+
+
+
     async handle({
-        datasetId
-    } : IndexDatasetServiceInput) {
+        datasetId,
+        options
+    } : IndexDatasetServiceInput) : Promise<void> {
 
 
 
@@ -49,46 +62,68 @@ export class IndexDatasetService {
         this.instancesExtractor.sparqlClient.setSparqlEndpoint(datasetToIndex.sparqlEndpoint)
 
 
-        const queries = await this.queryRepository.getAll()
+
+        const collectionQueries = await this.queryRepository.getAll()
 
         const collectionsToRetrieve : {
             query: Query,
             count: number
         }[] = []
 
-        
-        queries.forEach(async query => {
+       
+        for (const query of collectionQueries)  {
+            // find total count of items for every collection
             const instancesCount = await this.instancesExtractor.getInstancesCount(query.string)
+
             if (instancesCount && instancesCount > 0) {
+
                 collectionsToRetrieve.push({
                     query: query,
                     count: instancesCount
                 })
-            }
-        })
+            } 
+        }
 
 
-        // compute totalCount
-        // progress = current count / totalCount
 
-        const instancesBatchSize = 4000
-        collectionsToRetrieve.forEach( async (
-            collectionToRetrieve
-        ) => {
-            for( let offset=instancesBatchSize; offset < collectionToRetrieve.count + instancesBatchSize; offset = offset + instancesBatchSize) {
+        const totalCollectionToIndex = collectionsToRetrieve.reduce((accumulator, currentValue)=> {
+            return accumulator + currentValue.count
+        },0)
+        const progressCounter = new ProgressCounter(0, totalCollectionToIndex)
+
+
+        const instancesBatchSize = options && options.batchSize ? options.batchSize : DEFAULT_BATCH_SIZE 
+
+
+
+        for (const collectionToRetrieve of collectionsToRetrieve) {
+
+
+
+            // DatasetRepository.addPattern/Collection(patternURI)   here you map a Dataset with patterns it have
+
+
+
+            for( let offset=0; offset < collectionToRetrieve.count + instancesBatchSize; offset = offset + instancesBatchSize) {
+
+                // check in the db what i have to do (continue, cancel)
+
                 const instancesDTOs = await this.instancesExtractor.extractInstances({
                     offset : offset,
-                    limit:  collectionToRetrieve.count,
+                    limit:  instancesBatchSize,
                     query: collectionToRetrieve.query.string
                 })
-                // update currentCount
+                progressCounter.updateProgress(instancesDTOs.length)
+
+                
                 // PatternInstanceRepositories.loadBatch()
                 // the instanceDTO should have a type patternURI (you get this from Query)
                 // and you name the index with the patternURI
 
-                // DatasetRepository.addPattern/Collection(patternURI)   here you map a Dataset with pattern it have
+                // DatasetRepository.updateIndexStatus()
+
             }
-        })
+        }
 
         // DatasetRepository
         //      IndexStatus (non serve senza il Dataset quindi va nella DatasetRepository)

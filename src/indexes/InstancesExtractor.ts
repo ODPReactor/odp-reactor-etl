@@ -26,6 +26,7 @@ export class InstancesExtractor {
 
         const countQuery = this.sparqlQueryParser.toCountResultsQuery(query)
 
+
         if (!countQuery) {
             return 
         }
@@ -39,7 +40,33 @@ export class InstancesExtractor {
         if (!results) {
             return undefined
         }
-        return results[0].count
+        return Number.parseInt(results[0].count)
     }
 
+    async extractInstances({
+        offset,
+        limit,
+        query
+    } : ExtractInstancesInput) {
+
+        const batchQuery = this.sparqlQueryParser.toLimitOffsetQuery(query, offset, limit)
+
+        // console.log(batchQuery)
+
+        const batchInstancesBindings = await this.sparqlClient.sendRequest({
+            query: batchQuery
+        })
+
+        const results = await this.sparqlDataMapper.parseBindings(batchInstancesBindings)
+
+        return results
+
+    }
+
+}
+
+type ExtractInstancesInput = {
+    offset: number,
+    limit: number,
+    query: string
 }

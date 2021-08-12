@@ -1,7 +1,16 @@
 import { Client as ESClient } from "@elastic/elasticsearch"
-import { DeleteIndexInput, IIndexClient, IndexDataInput } from "./IIndexClient"
+import { IClient } from "odp-reactor-persistence-interface"
 
-export class ElasticClient implements IIndexClient<any> {
+type IndexDataInput = {
+    index: string,
+    data: any
+}
+
+type DeleteIndexInput = {
+    index: string
+}
+
+export class ElasticClient implements IClient {
 
     client?: ESClient
 
@@ -11,6 +20,10 @@ export class ElasticClient implements IIndexClient<any> {
             node: nodeURL
             })
         }
+    }
+
+    sendRequest(requestInput: any): Promise<any> {
+        throw new Error("Method not implemented.")
     }
 
     setNodeURL(nodeURL: string) {
@@ -31,8 +44,7 @@ export class ElasticClient implements IIndexClient<any> {
         await this.client?.indices.refresh()
     }
 
-    async deleteIndex({ index }: DeleteIndexInput): Promise<void> {
-
+    private async indexExists(index: string) {
         const itExistsRes = await this.client?.indices.exists({
             index: index
         })
@@ -41,9 +53,16 @@ export class ElasticClient implements IIndexClient<any> {
             throw Error("Error in connection to elastic index ")
         }
 
-        console.log("Exists:", index, itExistsRes.body)
+        return itExistsRes?.body
+    }
 
-        if (itExistsRes?.body) {
+
+  
+    async deleteIndex({ index }: DeleteIndexInput): Promise<void> {
+
+        const itExists = await this.indexExists(index)
+
+        if (itExists) {
             await this.client?.indices.delete({
                 index : index
             })
@@ -60,10 +79,53 @@ export class ElasticClient implements IIndexClient<any> {
     }
 
     async searchDocuments(index : string, query : any) : Promise<any> {
-        return await this.client?.search({
+
+        const itExists = await this.indexExists(index)
+
+
+        return itExists ? await this.client?.search({
             index: index,
             body: query
-        })
-     }
+        }) : undefined
+    }
+
+
+
+    async loadBulkDocuments(index: string, docs: any[]) : Promise<void> {
+
+        const body = docs.flatMap(doc => [{ index: { _index: index } }, doc])
+
+        const res = await this.client?.bulk({ refresh: true, body })
+
+
+        if (res?.body.errors) {
+
+            // collect errored documents and log them
+
+            const erroredDocuments: {
+                // If the status is 429 it means that you can retry the document,
+                // otherwise it's very likely a mapping error, and you should
+                // fix the document before to try it again.
+                status: any; error: any; operation: any; document: any
+            }[] = []
+
+            res.body.items.forEach((action : any, i : any) => {
+                const operation = Object.keys(action)[0]
+                if (action[operation].error) {
+                  erroredDocuments.push({
+                    // If the status is 429 it means that you can retry the document,
+                    // otherwise it's very likely a mapping error, and you should
+                    // fix the document before to try it again.
+                    status: action[operation].status,
+                    error: action[operation].error,
+                    operation: body[i * 2],
+                    document: body[i * 2 + 1]
+                  })
+                }
+              })
+              console.log("Errored documents:", erroredDocuments)
+        }
+
+    }
     
 }
