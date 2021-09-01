@@ -21,7 +21,7 @@ export class Pattern {
         label,
         id
     }:PatternCreateInput) {
-        return new Pattern(id || nanoid(), uri, label)
+        return new Pattern(id || nanoid().toLowerCase(), uri, label)
     }
     toJSON() {
         return {

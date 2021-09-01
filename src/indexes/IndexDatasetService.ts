@@ -1,7 +1,11 @@
 import { DatasetRepository } from "../dataset/DatasetRepository";
+import { Pattern } from "../pattern/Pattern";
+import { PatternInstance } from "../patterninstances/PatternInstance";
+import { PatternInstanceDTO } from "../patterninstances/PatternInstanceDTO";
 import { PatternInstanceRepository } from "../patterninstances/PatternInstanceRepository";
 import { Query } from "../queries/Query";
 import { QueryRepository } from "../queries/QueryRepository";
+import { IndexingStatusEnum } from "./IndexingStatus";
 import { InstancesExtractor } from "./InstancesExtractor";
 import { ProgressCounter } from "./progress/ProgressCounter";
 
@@ -17,7 +21,8 @@ type IndexDatasetServiceOptions = {
 type CreateIndexDatasetServiceInput = {
     instancesExtractor? : InstancesExtractor
     queryRepository? : QueryRepository,
-    datasetRepository? : DatasetRepository
+    datasetRepository? : DatasetRepository,
+    patternInstanceRepository?: PatternInstanceRepository
 }
 
 
@@ -27,18 +32,21 @@ export class IndexDatasetService {
 
     constructor(private instancesExtractor : InstancesExtractor,
         private queryRepository : QueryRepository,
-        private datasetRepository: DatasetRepository) {
+        private datasetRepository: DatasetRepository,
+        private patternInstanceRepository: PatternInstanceRepository) {
     }
 
     static create({
         instancesExtractor,
         queryRepository,
         datasetRepository,
+        patternInstanceRepository
     } : CreateIndexDatasetServiceInput) {
         return new IndexDatasetService(
             instancesExtractor || InstancesExtractor.create({}),
             queryRepository || QueryRepository.create({}),
-            datasetRepository || DatasetRepository.create({})
+            datasetRepository || DatasetRepository.create({}),
+            patternInstanceRepository || PatternInstanceRepository.create({})
         )
     }
 
@@ -96,15 +104,29 @@ export class IndexDatasetService {
 
 
 
+        // here progress is 0 we set status to RUNNING
+        await this.datasetRepository.updateIndexingStatus(datasetToIndex.getId(), {
+            status: IndexingStatusEnum.RUNNING,
+            progress: progressCounter.getProgress()
+        })
+
+        // here start the running
         for (const collectionToRetrieve of collectionsToRetrieve) {
 
+            const extractedPattern = Pattern.create({
+                uri: collectionToRetrieve.query.patternUri,
+                label: collectionToRetrieve.query.patternLabel
+            })
 
 
-            // DatasetRepository.addPattern/Collection(patternURI)   here you map a Dataset with patterns it have
 
+            await this.datasetRepository.addPattern(datasetToIndex.getId(), extractedPattern)
 
 
             for( let offset=0; offset < collectionToRetrieve.count + instancesBatchSize; offset = offset + instancesBatchSize) {
+
+
+                await this.datasetRepository.indexingStatusNotCanceled(datasetToIndex.getId())
 
                 // check in the db what i have to do (continue, cancel)
 
@@ -113,24 +135,42 @@ export class IndexDatasetService {
                     limit:  instancesBatchSize,
                     query: collectionToRetrieve.query.string
                 })
-                progressCounter.updateProgress(instancesDTOs.length)
 
-                
+
                 // PatternInstanceRepositories.loadBatch()
                 // the instanceDTO should have a type patternURI (you get this from Query)
                 // and you name the index with the patternURI
 
-                // DatasetRepository.updateIndexStatus()
+                await this.patternInstanceRepository.loadInstances(
+                    instancesDTOs.map((instanceData : any) => {
+                        return PatternInstance.create({
+                            type: collectionToRetrieve.query.patternUri,
+                            data: instanceData,
+                            patternId: extractedPattern.id,
+                            datasetId: datasetToIndex.getId()
+                        })
+                    })
+                )
 
+
+                // update progress status
+                progressCounter.updateProgress(instancesDTOs.length)
+                await this.datasetRepository.updateIndexingStatus(datasetToIndex.getId(), {
+                    progress: progressCounter.getProgress()
+                })                
             }
         }
 
-        // DatasetRepository
-        //      IndexStatus (non serve senza il Dataset quindi va nella DatasetRepository)
-        //      mentre il servizio indicizza scrive queste info nel DB
-        //      es.  Stopped. Canceled. Progress. Complete. 
-        //      completion %
-        //      params to resume
-        //      last index data
+
+
+        // update indexing status to complete!
+        await this.datasetRepository.updateIndexingStatus(datasetToIndex.getId(),
+        {
+            status: IndexingStatusEnum.COMPLETED,
+            progress: progressCounter.getProgress()
+        })
+
+
+
     }
 }

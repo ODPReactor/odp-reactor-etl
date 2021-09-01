@@ -1,6 +1,6 @@
 import { nanoid } from "nanoid";
 import { IRepository, SparqlClient, SparqlDataMapper } from "odp-reactor-persistence-interface";
-import { IndexingStatus } from "../indexes/IndexingStatus";
+import { IndexingStatus, IndexingStatusEnum } from "../indexes/IndexingStatus";
 import { Pattern } from "../pattern/Pattern";
 import { PatternDataMapper } from "../pattern/PatternDataMapper";
 import { PatternDTO } from "../pattern/PatternDTO";
@@ -139,6 +139,7 @@ export class DatasetRepository implements IRepository {
         const queryBindings = await this.dbClient.sendRequest({
             query: this.datasetQueryBuilder.getAllDatasetPatterns(datasetId)
         })
+
         const sparqlDataMapper = new SparqlDataMapper()
         const queryResults = await sparqlDataMapper.parseBindings(queryBindings)
 
@@ -152,15 +153,12 @@ export class DatasetRepository implements IRepository {
 
         const patterns = await this.getAllPatternsByDatasetId(datasetId)
 
-
-
         if (patterns.length === 0) {
 
             await this.dbClient.sendUpdateRequest({
                 query: this.datasetQueryBuilder.createPatternCollection(datasetId, [pattern])
             })
         } else {
-            console.log(this.datasetQueryBuilder.addPattern(datasetId, pattern))
             await this.dbClient.sendUpdateRequest({
                 
                 query: this.datasetQueryBuilder.addPattern(datasetId, pattern)
@@ -215,6 +213,14 @@ export class DatasetRepository implements IRepository {
 
         return indexingStatus
         
+    }
+
+    async indexingStatusNotCanceled(datasetId: string) {
+
+        const indexingStatus = await this.getIndexingStatusByDatasetId(datasetId)
+
+        return indexingStatus?.status !== IndexingStatusEnum.CANCELED
+
     }
 
 }

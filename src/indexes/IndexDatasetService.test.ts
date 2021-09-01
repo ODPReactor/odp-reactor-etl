@@ -2,17 +2,21 @@ import { nanoid } from "nanoid"
 import { SparqlClient, SparqlGraphTestHelper } from "odp-reactor-persistence-interface"
 import { Dataset } from "../dataset/Dataset"
 import { DatasetRepository } from "../dataset/DatasetRepository"
+import { PatternInstanceRepository } from "../patterninstances/PatternInstanceRepository"
 import { Query } from "../queries/Query"
 import { QueryRepository } from "../queries/QueryRepository"
 import { catchUnpredictableErrorsFromDependency } from "../test/catchUnpredictableErrorsFromDependency"
+import { ElasticClient } from "./ElasticClient"
 import { IndexDatasetService } from "./IndexDatasetService"
 
 describe("Test IndexDatasetService, the service to index datasets", () => {
 
+    debugger;
 
     const testSparqlEndpoint = process.env.TEST_SPARQL_ENDPOINT_URI
-    if (!testSparqlEndpoint) {
-        throw new Error("Cannot run test no process.env.TEST_SPARQL_ENDPOINT_URI specified")
+    const testEsIndexUrl = process.env.TEST_ES_INDEX_URL
+    if (!testSparqlEndpoint || !testEsIndexUrl) {
+        throw new Error("Cannot run test no process.env.TEST_SPARQL_ENDPOINT_URI or no process.env.TEST_ES_INDEX_URL specified")
     }
 
 
@@ -49,9 +53,15 @@ describe("Test IndexDatasetService, the service to index datasets", () => {
         const datasetRepository = DatasetRepository.create({
             dbClient: new SparqlClient(testSparqlEndpoint, testConfigGraph)
         })
+
+        const patternInstancesRepository = PatternInstanceRepository.create({
+            dbClient: new ElasticClient(testEsIndexUrl)
+        })
+
         const indexDatasetService = IndexDatasetService.create({
             queryRepository: queryRepository,
-            datasetRepository: datasetRepository
+            datasetRepository: datasetRepository,
+            patternInstanceRepository: patternInstancesRepository
         })
 
 
@@ -164,7 +174,7 @@ describe("Test IndexDatasetService, the service to index datasets", () => {
 
         if (!await catchUnpredictableErrorsFromDependency( async ()=>{
             await queryRepository.create(query2)
-        })) {console.log("Test skipped as SPARQL endpoint return occasional BAD response: Create query to index 2"); return }       
+        },true)) {console.log("Test skipped as SPARQL endpoint return occasional BAD response: Create query to index 2"); return }       
 
 
 
@@ -176,7 +186,7 @@ describe("Test IndexDatasetService, the service to index datasets", () => {
                     batchSize: 30
                 }
             })
-        })) {console.log("Test skipped as SPARQL endpoint return occasional BAD response: Indexing batchSize 20"); return }       
+        }, true)) {console.log("Test skipped as SPARQL endpoint return occasional BAD response: Indexing batchSize 30"); return }       
 
         console.log(testToIndexGraph)
 

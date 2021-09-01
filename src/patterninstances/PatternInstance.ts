@@ -1,6 +1,14 @@
 import { nanoid } from "nanoid";
 import { PatternInstanceDTO } from "./PatternInstanceDTO";
 
+type CreatePatternInstanceInput = {
+    id? : string,
+    type: string,
+    data: any,
+    patternId : string,
+    datasetId? : string
+};
+
 export class PatternInstance {
 
     /**
@@ -8,11 +16,11 @@ export class PatternInstance {
      * @param id 
      * @param type pattern URI. The type of instance
      */
-    constructor(public id:string, public type:string,  public data : any, public datasetId?: string ) {}
+    constructor(public id:string, public type:string,  public data : any, public patternId : string,  public datasetId?: string ) {}
 
-    static create(d: PatternInstanceDTO): PatternInstance {
+    static create(d: CreatePatternInstanceInput): PatternInstance {
 
-        return new PatternInstance(d.id || nanoid(), d.type, d.data, d.datasetId)
+        return new PatternInstance(d.id || nanoid(), d.type, d.data, d.patternId, d.datasetId)
 
     }
 
@@ -21,6 +29,7 @@ export class PatternInstance {
             id: this.id,
             type: this.type,
             data: this.data,
+            patternId: this.patternId,
             datasetId: this.datasetId
         }
     }

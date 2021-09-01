@@ -1,47 +1,42 @@
-DatasetRepo
-	addPattern	// to know all the patterns of a dataset
-			// attention when updating dataset not to deleting this refs
-
-
-4 hours
-	
-Complete the IndexingService and try it
+#4 hours
 
 Add labels in frontend to show indexing status
+connect frontend to indexing backend with batch job
 
+#4 hours
 
-4 hours
-1)
+create Pattern API
+	frontend asks patterns for dataset to API (ds should be indexed)
+	
 
-// create Pattern API
-//	frontend asks patterns for dataset to API (ds should be indexed)
-//	
+#5/6 hours
 
-
-3/4 days
-
-2)
-
-// create PatternInstances API
-//	frontend asks patternInstances to API
-
-// transform filters into server side filters? They should be passed to patternInstancesAPI
-
-
-2 days
-
-3) associate VisualPattern to URI
-
-// on dev side you have frames or can create frames, and add they're label + ID to a file
-//	such that the client can resolve them and know which they are (dynamic loading React)
-//	then the user can map patternURI to a specific VisualFrame
-//	such that he/she can change them dynamically
+create PatternInstances API
+frontend asks patternInstances to API
 
 
 
+# 3? days
 
+transform filters into server side filters? They should be passed to patternInstancesAPI
+
+
+# 4/5 hours
+
+create a JS map (js config file) (insead of config json file) to map a VisualFrame
+with a pattern
+
+
+# todo?
 
 // understand with colleagues how they suppose to specify relations between 
 //	entities/patterns/collections
 
-// next: move the service in a separate service / component
+loading an owl file, create them with a GUI
+
+e.g.	with the tool we extract and index patterns, but we are not able to say this pattern is related to this one
+	we can add this in the query template ,
+	e.g. we say this pattern has this relations (label+uri) with these other entities(uri)
+
+
+

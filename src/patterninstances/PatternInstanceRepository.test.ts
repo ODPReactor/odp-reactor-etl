@@ -31,6 +31,7 @@ describe("PatternInstanceRepository test", () => {
                     lat: 45,
                     long: 32
                 },
+                patternId: uniqueType,
                 type: uniqueType
             },
             {
@@ -39,6 +40,7 @@ describe("PatternInstanceRepository test", () => {
                     lat: 45,
                     long: 20
                 },
+                patternId: uniqueType,
                 type: uniqueType
             },
             {
@@ -47,6 +49,7 @@ describe("PatternInstanceRepository test", () => {
                     lat: 30,
                     long: 15
                 },
+                patternId: uniqueType,
                 type: uniqueType
             }
         ]
@@ -56,7 +59,7 @@ describe("PatternInstanceRepository test", () => {
         }))
 
 
-        const createdPatternInstances = await patternInstanceRepo.getAllByType(uniqueType)
+        const createdPatternInstances = await patternInstanceRepo.getAllByPattern(uniqueType)
 
         expect(createdPatternInstances).toBeDefined()
         expect(createdPatternInstances).toHaveLength(3)
@@ -64,7 +67,7 @@ describe("PatternInstanceRepository test", () => {
 
         await patternInstanceRepo.deleteInstancesByType(uniqueType)
 
-        const deletedInstances = await patternInstanceRepo.getAllByType(uniqueType)
+        const deletedInstances = await patternInstanceRepo.getAllByPattern(uniqueType)
 
         expect(deletedInstances).toBeDefined()
         expect(deletedInstances).toHaveLength(0)

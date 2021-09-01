@@ -11,6 +11,8 @@ type CreatePatternInstanceRepositoryInput = {
 export class PatternInstanceRepository implements IRepository {
 
 
+    indexNamePrefix : string = "pattern_collection_"
+
     constructor(public dbClient : ElasticClient, public dataMapper: PatternInstanceDataMapper) {
     }
 
@@ -33,22 +35,20 @@ export class PatternInstanceRepository implements IRepository {
     }
 
 
-    async loadInstances(patternInstances: PatternInstance[], instanceType?: string) {
+    async loadInstances(patternInstances: PatternInstance[]) {
 
         if (!(patternInstances.length > 0)) {
             return
         }
 
-        if (!instanceType) {
-            instanceType = patternInstances[0].type
-        }
+        const patternId = patternInstances[0].patternId
 
-        await this.dbClient.loadBulkDocuments(instanceType, patternInstances.map(p => {
+        await this.dbClient.loadBulkDocuments(patternId , patternInstances.map(p => {
             return this.dataMapper.toDto(p)
         }))
     }
 
-    async getAllByType(type: string) : Promise<PatternInstance[]> {
+    async getAllByPattern(type: string) : Promise<PatternInstance[]> {
 
         const results = await this.dbClient.searchDocuments(type, {
             query : {
@@ -69,6 +69,7 @@ export class PatternInstanceRepository implements IRepository {
             return this.dataMapper.toEntity({
                 id: data.id,
                 type: data.type,
+                patternId: data.patternId,
                 data: data.data
             })
         })
