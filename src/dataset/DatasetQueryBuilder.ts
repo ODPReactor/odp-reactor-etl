@@ -1,5 +1,6 @@
 import { IQueryBuilder } from "odp-reactor-persistence-interface";
 import { IndexingStatus } from "../indexes/IndexingStatus";
+import { Pattern } from "../pattern/Pattern";
 import { ODPRSparqlQueryBuilder } from "../sparql/SparqlQueryBuilder";
 import { Dataset } from "./Dataset";
 
@@ -54,6 +55,58 @@ export class DatasetQueryBuilder extends ODPRSparqlQueryBuilder implements IQuer
             }
         }
     `    
+    }
+
+    getAllDatasetPatterns(datasetId: string) : string {
+      return `
+      ${this.addPrefixes()}
+
+      SELECT DISTINCT ?label ?uri ?id WHERE {
+          GRAPH <${this.graph}> {
+              odpr:${datasetId} a odpr:Dataset ;
+                odpr:hasPatternCollection ?patternCollection .
+
+              ?patternCollection odpr:hasPattern ?uri .
+                ?uri odpr:label ?label .
+                ?uri odpr:id ?id .
+          }
+      }
+    `
+
+    }
+
+    createPatternCollection(datasetId: string, patterns: Pattern[]) {
+      return `
+      ${this.addPrefixes()}
+
+        INSERT DATA {
+          GRAPH <${this.graph}> {
+              odpr:${datasetId} odpr:hasPatternCollection odpr:pattern_collection_${datasetId} .
+              
+              ${patterns.map(p => {
+                return `odpr:pattern_collection_${datasetId} odpr:hasPattern <${p.uri}>.
+                        <${p.uri}>                           odpr:label """${p.label}""";
+                                                             odpr:id """${p.id}""" . `
+              }).reduce((queryBlock, queryLine) => {
+                return queryBlock + "\n" + queryLine
+              })}
+          }
+      }
+      `
+    }
+
+    addPattern(datasetId: string, pattern: Pattern) {
+      return `
+      ${this.addPrefixes()}
+
+      INSERT DATA {
+          GRAPH <${this.graph}> {
+            odpr:pattern_collection_${datasetId} odpr:hasPattern <${pattern.uri}>.
+              <${pattern.uri}>   odpr:label """${pattern.label}""";
+                                 odpr:id  """${pattern.id}""".           
+            }
+        }
+      `
     }
 
 

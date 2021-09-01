@@ -1,6 +1,7 @@
 import { nanoid } from "nanoid"
 import { SparqlClient, SparqlGraphTestHelper } from "odp-reactor-persistence-interface"
 import { IndexingStatus, IndexingStatusEnum } from "../indexes/IndexingStatus"
+import { Pattern } from "../pattern/Pattern"
 import { catchUnpredictableErrorsFromDependency } from "../test/catchUnpredictableErrorsFromDependency"
 import { Dataset } from "./Dataset"
 import { DatasetRepository } from "./DatasetRepository"
@@ -423,10 +424,6 @@ describe("Test for dataset repository", ()=>{
         expect(indexingStatus).toBeDefined()
         expect(indexingStatus?.status).toBe(IndexingStatusEnum.NOTSTARTED)
 
-        console.log("IndexinmgStatus1:",indexingStatus)
-
-
-
         let createdDataset : any
         if (!await catchUnpredictableErrorsFromDependency( async ()=>{              createdDataset = await datasetRepository.getById(d1.id)
 
@@ -466,8 +463,6 @@ describe("Test for dataset repository", ()=>{
             return
         }
 
-        console.log("IndexinmgStatus:",indexingStatus)
-
         expect(indexingStatus).toBeDefined()
         expect(indexingStatus?.status).toBe(IndexingStatusEnum.RUNNING)
         expect(indexingStatus?.progress).toBe(30)
@@ -485,5 +480,113 @@ describe("Test for dataset repository", ()=>{
         }
 
     } )
+
+    test("It should add and retrieve pattern to and from a dataset", async ()=> {
+
+
+        const testConfigGraph = graphTester.getUniqueGraphId()
+        const datasetRepository = DatasetRepository.create({
+            dbClient: new SparqlClient(testSparqlEndpoint, testConfigGraph)
+        })
+
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{        await graphTester.createGraph(testConfigGraph)
+
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+
+        const se1 = "https://dbpedia.org/sparql"
+
+
+        const d1 = Dataset.create({
+            sparqlEndpoint: se1,
+            graph: "https://dbpedia",
+            label: "DBPedia",
+            indexed: false
+        })
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{                await datasetRepository.create(d1)
+
+
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+
+        const idP1 = nanoid()
+        const newPattern1 = Pattern.create({
+            uri: "https://example.com/p1",
+            label: "Pattern 1",
+            id: idP1
+        })
+
+        let dsPatterns : any
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ dsPatterns =  await datasetRepository.getAllPatternsByDatasetId(d1.getId())
+
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+        expect(dsPatterns).toHaveLength(0)
+
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{                await datasetRepository.addPattern(d1.getId(), newPattern1)
+
+        }, true)) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ dsPatterns =  await datasetRepository.getAllPatternsByDatasetId(d1.getId())
+
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+        expect(dsPatterns).toHaveLength(1)
+
+        const foundP = dsPatterns[0] as Pattern
+
+        expect(foundP.id).toBe(idP1)
+        expect(foundP.label).toBe("Pattern 1")
+        expect(foundP.uri).toBe("https://example.com/p1")
+
+        const newPattern2 = Pattern.create({
+            uri : "https://example.com/p2",
+            label: "Pattern 2"
+        })
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{                await datasetRepository.addPattern(d1.getId(), newPattern2)
+
+        }, true)) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{ dsPatterns =  await datasetRepository.getAllPatternsByDatasetId(d1.getId())
+
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+        expect(dsPatterns).toHaveLength(2)
+
+
+        if (!await catchUnpredictableErrorsFromDependency( async ()=>{        await graphTester.cleanGraph(testConfigGraph)
+
+        })) {
+            console.log("Test skipped as SPARQL endpoint return occasional BAD response")
+            return
+        }
+
+    })
+
 
 })

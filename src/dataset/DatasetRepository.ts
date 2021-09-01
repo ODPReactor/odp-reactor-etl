@@ -1,6 +1,9 @@
 import { nanoid } from "nanoid";
 import { IRepository, SparqlClient, SparqlDataMapper } from "odp-reactor-persistence-interface";
 import { IndexingStatus } from "../indexes/IndexingStatus";
+import { Pattern } from "../pattern/Pattern";
+import { PatternDataMapper } from "../pattern/PatternDataMapper";
+import { PatternDTO } from "../pattern/PatternDTO";
 import { UrlParser } from "../url/UrlParser";
 import { Dataset } from "./Dataset";
 import { DatasetDataMapper } from "./DatasetDataMapper";
@@ -10,6 +13,7 @@ type CreateDatasetRepositoryInput = {
     datasetQueryBuilder? : DatasetQueryBuilder
     dbClient? : SparqlClient
     dataMapper? : DatasetDataMapper
+    patternDataMapper? : PatternDataMapper
 }
 
 export class DatasetRepository implements IRepository {
@@ -19,19 +23,22 @@ export class DatasetRepository implements IRepository {
     datasetQueryBuilder: DatasetQueryBuilder;
     urlParser: UrlParser;
     dataMapper: DatasetDataMapper;
+    patternDataMapper: PatternDataMapper;
 
 
-    constructor(dbClient : SparqlClient, datasetQueryBuilder: DatasetQueryBuilder, dataMapper : DatasetDataMapper) {
+    constructor(dbClient : SparqlClient, datasetQueryBuilder: DatasetQueryBuilder, dataMapper : DatasetDataMapper, patternDataMapper : PatternDataMapper) {
         this.dbClient = dbClient
         this.datasetQueryBuilder = datasetQueryBuilder
         this.urlParser = new UrlParser()
         this.dataMapper = dataMapper
+        this.patternDataMapper = patternDataMapper
     }
 
     static create({
         dbClient,
         datasetQueryBuilder,
-        dataMapper
+        dataMapper,
+        patternDataMapper
     } : CreateDatasetRepositoryInput) {
         if (!dbClient) {
 
@@ -55,14 +62,12 @@ export class DatasetRepository implements IRepository {
             dataMapper = new DatasetDataMapper()
         }
 
+        if (!patternDataMapper) {
+            patternDataMapper = new PatternDataMapper()
+        }
 
-        return new DatasetRepository(dbClient, datasetQueryBuilder, dataMapper)
-    }
 
-
-
-    async addPattern() {
-
+        return new DatasetRepository(dbClient, datasetQueryBuilder, dataMapper, patternDataMapper)
     }
 
 
@@ -127,6 +132,40 @@ export class DatasetRepository implements IRepository {
         await this.dbClient.sendUpdateRequest({
             query: this.datasetQueryBuilder.updateQuery(dataset)
         })
+    }
+
+    async getAllPatternsByDatasetId(datasetId: string) {
+
+        const queryBindings = await this.dbClient.sendRequest({
+            query: this.datasetQueryBuilder.getAllDatasetPatterns(datasetId)
+        })
+        const sparqlDataMapper = new SparqlDataMapper()
+        const queryResults = await sparqlDataMapper.parseBindings(queryBindings)
+
+        return queryResults.map((d: PatternDTO) => {
+           return this.patternDataMapper.toEntity(d)
+        })
+
+    }
+
+    async addPattern(datasetId: string, pattern: Pattern) : Promise<void> {
+
+        const patterns = await this.getAllPatternsByDatasetId(datasetId)
+
+
+
+        if (patterns.length === 0) {
+
+            await this.dbClient.sendUpdateRequest({
+                query: this.datasetQueryBuilder.createPatternCollection(datasetId, [pattern])
+            })
+        } else {
+            console.log(this.datasetQueryBuilder.addPattern(datasetId, pattern))
+            await this.dbClient.sendUpdateRequest({
+                
+                query: this.datasetQueryBuilder.addPattern(datasetId, pattern)
+            })
+        }
     }
 
     async updateIndexingStatus(datasetId: string, status: IndexingStatus) : Promise<void> {

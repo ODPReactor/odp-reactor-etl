@@ -1,27 +1,13 @@
-4/5 hours
-
-Dataset
-	IndexingStatus 
-		{
-			status: "cancel","complete","progress",
-			percentage: 20
-		}
-
 DatasetRepo
 	addPattern	// to know all the patterns of a dataset
 			// attention when updating dataset not to deleting this refs
 
-	getIndexingStatus()
-	setIndexingStatus()	// we need a cancel indexing
-				// such that a client can cancel indexing
 
-				// the indexing job can read the
-
-
-2 hours
+4 hours
 	
 Complete the IndexingService and try it
 
+Add labels in frontend to show indexing status
 
 
 4 hours
