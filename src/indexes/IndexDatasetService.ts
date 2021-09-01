@@ -58,8 +58,8 @@ export class IndexDatasetService {
             return undefined
         }
         // configure instances extractor with dataset to query
-        this.instancesExtractor.sparqlClient.graph = datasetToIndex?.graph
-        this.instancesExtractor.sparqlClient.setSparqlEndpoint(datasetToIndex.sparqlEndpoint)
+        datasetToIndex.graph && this.instancesExtractor.setGraph(datasetToIndex.graph)
+        this.instancesExtractor.setSparqlEndpoint(datasetToIndex.sparqlEndpoint)
 
 
 

@@ -5,10 +5,13 @@
  * 
  * @param {()=>{}} func 
  */
-export async function catchUnpredictableErrorsFromDependency(func : any) {
+export async function catchUnpredictableErrorsFromDependency(func : any, verbose=false) {
     try {
         await func()
     } catch(error) {
+        if (verbose) {
+            console.log(error)
+        }
         return false
     }
     return true

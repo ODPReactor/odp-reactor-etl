@@ -1,4 +1,6 @@
+import { nanoid } from "nanoid";
 import { IRepository, SparqlClient, SparqlDataMapper } from "odp-reactor-persistence-interface";
+import { IndexingStatus } from "../indexes/IndexingStatus";
 import { UrlParser } from "../url/UrlParser";
 import { Dataset } from "./Dataset";
 import { DatasetDataMapper } from "./DatasetDataMapper";
@@ -125,6 +127,55 @@ export class DatasetRepository implements IRepository {
         await this.dbClient.sendUpdateRequest({
             query: this.datasetQueryBuilder.updateQuery(dataset)
         })
+    }
+
+    async updateIndexingStatus(datasetId: string, status: IndexingStatus) : Promise<void> {
+
+        const oldIndexingStatus = await this.getIndexingStatusByDatasetId(datasetId)
+
+        // if no indexing status create a new one else replace data where present and add set existing where present
+
+        status = oldIndexingStatus ? {
+            id: oldIndexingStatus.id,
+            status: status.status ? status.status : oldIndexingStatus.status,
+            progress: status.progress ? status.progress : oldIndexingStatus.progress,
+            dateTime: new Date().toString()
+        } : {
+            id: nanoid(),
+            status: status.status,
+            progress: status.progress,
+            dateTime: new Date().toString()
+        }
+        
+        oldIndexingStatus ? await this.dbClient.sendUpdateRequest({
+            query: this.datasetQueryBuilder.updateIndexingStatus(datasetId, status)
+        }) : await this.dbClient.sendUpdateRequest({
+            query: this.datasetQueryBuilder.createIndexingStatus(datasetId, status)
+        })
+    }
+
+    async getIndexingStatusByDatasetId(datasetId: string) : Promise<IndexingStatus | undefined> {
+
+
+        const queryBindings = await this.dbClient.sendRequest({
+            query: this.datasetQueryBuilder.getIndexingStatusByDatasetId(datasetId)
+        })
+
+        const sparqlDataMapper = new SparqlDataMapper()
+        const queryResults = await sparqlDataMapper.parseBindings(queryBindings)
+
+        const data = queryResults[0]
+
+        const indexingStatus = data && data.id ? {
+            id: data.id,
+            status: data.status,
+            progress: data.progress != "" ? parseInt(data.progress) : undefined ,
+            dateTime: data.date
+
+        } : undefined
+
+        return indexingStatus
+        
     }
 
 }

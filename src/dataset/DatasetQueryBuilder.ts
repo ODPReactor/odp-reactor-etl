@@ -1,4 +1,5 @@
 import { IQueryBuilder } from "odp-reactor-persistence-interface";
+import { IndexingStatus } from "../indexes/IndexingStatus";
 import { ODPRSparqlQueryBuilder } from "../sparql/SparqlQueryBuilder";
 import { Dataset } from "./Dataset";
 
@@ -129,6 +130,85 @@ export class DatasetQueryBuilder extends ODPRSparqlQueryBuilder implements IQuer
             }
         }
     `
+    }
+
+    getIndexingStatusByDatasetId(datasetId: string)  {
+      return `
+      
+        ${this.addPrefixes()}
+
+        SELECT ?id ?status ?progress ?date WHERE {
+
+          GRAPH <${this.graph}> {
+
+            odpr:${datasetId} a odpr:Dataset ;
+              odpr:hasIndexingStatus ?statusUri .
+              ?statusUri a odpr:IndexingStatus ;
+                  odpr:id ?id ;
+                  odpr:status ?status ;
+                  odpr:dateTime ?date .
+
+              OPTIONAL {
+                odpr:${datasetId} a odpr:Dataset ;
+                odpr:hasIndexingStatus ?statusUri .
+                ?statusUri a odpr:IndexingStatus ;
+                    odpr:progress ?progress2B .
+              }
+              BIND ( IF (BOUND ( ?progress2B ), ?progress2B, "" )  as ?progress ) .
+
+      }
+    }
+
+      `
+    }
+
+    createIndexingStatus(datasetId: string, indexingStatus: IndexingStatus) : string {
+      return `
+        ${this.addPrefixes()}
+
+        INSERT DATA {
+          GRAPH <${this.graph}> {
+            odpr:${datasetId} odpr:hasIndexingStatus odpr:${indexingStatus.id} .
+
+            odpr:${indexingStatus.id} a odpr:IndexingStatus;
+                odpr:id """${indexingStatus.id}""";
+                odpr:status """${indexingStatus.status}""";
+                odpr:progress """${indexingStatus.progress || ""}""";
+                odpr:dateTime """${indexingStatus.dateTime}""" .
+          }
+      }
+      `
+    }
+
+    updateIndexingStatus(datasetId: string, indexingStatus: IndexingStatus) {
+
+      return `
+        ${this.addPrefixes()}
+
+        DELETE {
+          GRAPH <${this.graph}> {
+              odpr:${datasetId} odpr:hasIndexingStatus ?statusUri .
+              ?statusUri ?p ?o .
+          }
+        }
+        INSERT {
+            GRAPH <${this.graph}> {
+              odpr:${datasetId} odpr:hasIndexingStatus odpr:${indexingStatus.id} .
+
+              odpr:${indexingStatus.id} a odpr:IndexingStatus;
+                  odpr:id """${indexingStatus.id}""";
+                  odpr:status """${indexingStatus.status}""";
+                  odpr:progress """${indexingStatus.progress || ""}""";
+                  odpr:dateTime """${indexingStatus.dateTime}""" .
+            }
+        }
+        WHERE {
+          GRAPH <${this.graph}> {
+            odpr:${datasetId} odpr:hasIndexingStatus ?statusUri .
+            ?statusUri ?p ?o .
+           }        
+        }    
+      `
     }
 
     getConfigByDatasetId(datasetId : string) {

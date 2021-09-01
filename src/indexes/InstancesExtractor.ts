@@ -63,6 +63,14 @@ export class InstancesExtractor {
 
     }
 
+    setGraph(graph: string) : void {
+        this.sparqlClient.setGraph(graph)
+    }
+
+    setSparqlEndpoint(sparqlEndpoint: string) : void {
+        this.sparqlClient.setSparqlEndpoint(sparqlEndpoint)
+    }
+
 }
 
 type ExtractInstancesInput = {
