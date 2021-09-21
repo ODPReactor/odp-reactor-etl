@@ -1,10 +1,17 @@
 import { nanoid } from "nanoid"
 import { ElasticClient } from "../indexes/ElasticClient"
+import { skipTestIfCI } from "../test/skipTestIfCI"
 import { PatternInstance } from "./PatternInstance"
 import { PatternInstanceDTO } from "./PatternInstanceDTO"
 import { PatternInstanceRepository } from "./PatternInstanceRepository"
 
-describe("PatternInstanceRepository test", () => {
+skipTestIfCI( () => {
+
+    describe("PatternInstanceRepository test", () => {
+
+    if (process.env.CI_TEST) {
+        return true
+    }
 
 
     const elasticTestUrl = process.env.TEST_ES_INDEX_URL
@@ -71,6 +78,8 @@ describe("PatternInstanceRepository test", () => {
 
         expect(deletedInstances).toBeDefined()
         expect(deletedInstances).toHaveLength(0)
+
+    })
 
     })
 

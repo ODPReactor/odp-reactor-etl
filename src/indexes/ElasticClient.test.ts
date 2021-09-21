@@ -1,7 +1,9 @@
 import { nanoid } from "nanoid"
+import { skipTestIfCI } from "../test/skipTestIfCI"
 import { ElasticClient } from "./ElasticClient"
 
-describe("ElasticClient test",() =>{
+
+skipTestIfCI(()=>{ describe("ElasticClient test",() =>{
 
     const elasticTestUrl = process.env.TEST_ES_INDEX_URL
 
@@ -108,5 +110,6 @@ describe("ElasticClient test",() =>{
 
         await indexClient.deleteIndex({ index: index })
 
+        })
     })
 })

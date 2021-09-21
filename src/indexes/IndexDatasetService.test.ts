@@ -6,12 +6,14 @@ import { PatternInstanceRepository } from "../patterninstances/PatternInstanceRe
 import { Query } from "../queries/Query"
 import { QueryRepository } from "../queries/QueryRepository"
 import { catchUnpredictableErrorsFromDependency } from "../test/catchUnpredictableErrorsFromDependency"
+import { skipTestIfCI } from "../test/skipTestIfCI"
 import { ElasticClient } from "./ElasticClient"
 import { IndexDatasetService } from "./IndexDatasetService"
 
-describe("Test IndexDatasetService, the service to index datasets", () => {
 
-    debugger;
+skipTestIfCI(()=>{
+
+    describe("Test IndexDatasetService, the service to index datasets", () => {
 
     const testSparqlEndpoint = process.env.TEST_SPARQL_ENDPOINT_URI
     const testEsIndexUrl = process.env.TEST_ES_INDEX_URL
@@ -205,6 +207,8 @@ describe("Test IndexDatasetService, the service to index datasets", () => {
             return
         }
 
+
+    })
 
     })
 
