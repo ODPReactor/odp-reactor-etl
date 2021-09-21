@@ -21,6 +21,7 @@ jobs:
           NODE_ENV: production
           TEST_ES_INDEX_URL: http://localhost:9200
           TEST_SPARQL_ENDPOINT_URI: https://arco.istc.cnr.it/odpr/sparql
+          HD_TEST_SPARQL_ENDPOINT_URI: https://arco.istc.cnr.it/odpr/sparql
           HD_CONFIG_SPARQL_ENDPOINT_URI: https://arco.istc.cnr.it/odpr/sparql
           HD_CONFIG_GRAPH: http://odpreactor.arco.istc.cnr.it/configuration
           PORT: 4000
