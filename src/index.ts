@@ -44,6 +44,10 @@ if (process.env.LOCAL === "true") {
     app.listen(PORT, () => {
         console.log(`🚀 Server ready at http://localhost:${PORT}`)
     })
+} else {
+    app.listen(PORT, () => {
+        console.log("Server ready on PORT " + PORT)
+    })
 }
 
 module.exports = app

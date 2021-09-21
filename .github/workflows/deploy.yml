@@ -1,0 +1,32 @@
+name: odp-reactor-server deploy
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: akhileshns/heroku-deploy@v3.12.12 # This is the action
+        with:
+          docker_heroku_process_type: web
+          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
+          heroku_app_name: "odp-reactor-server" #Must be unique in Heroku
+          heroku_email: "odpreactor00@protonmail.com"
+          branch: "develop"
+        env:
+          NODE_ENV: production
+          TEST_ES_INDEX_URL: http://localhost:9200
+          TEST_SPARQL_ENDPOINT_URI: https://arco.istc.cnr.it/odpr/sparql
+          HD_CONFIG_SPARQL_ENDPOINT_URI: https://arco.istc.cnr.it/odpr/sparql
+          HD_CONFIG_GRAPH: http://odpreactor.arco.istc.cnr.it/configuration
+          PORT: 4000
+          HD_PORT: 4000
+          ALLOWED_ORIGINS: http://localhost:3000,https://odp-reactor-ldr.herokuapp.com,https://odp-reactor-browser.vercel.app
+          HD_ALLOWED_ORIGINS: http://localhost:3000,https://odp-reactor-ldr.herokuapp.com,https://odp-reactor-browser.vercel.app
+          HD_CI_TEST: true
+          CI_TEST: true
+          HD_HOST: https://odp-reactor-server.herokuapp.com/
