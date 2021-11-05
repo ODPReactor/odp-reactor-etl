@@ -1,4 +1,4 @@
-FROM node:16 AS builder
+FROM node:14 AS builder
 
 
 # Update aptitude with new repo
@@ -20,7 +20,7 @@ RUN npm run build:notest
 
 
 # create runner
-FROM node:16
+FROM node:14
 
 COPY --from=builder /api /api
 WORKDIR /api
