@@ -1,0 +1,84 @@
+async index dataset
+    
+    async get all queries
+    
+    totalInstances = collection count sum
+
+    per ogni query getTotalCollectionInstancesCounts() 1s each
+
+    per ogni collezione
+        1 to K query
+        every time you
+
+
+
+DatasetIndexingStatus {
+    status: "notindex" | "pause" | "running" | "indexed"
+    percentage: number
+    estimatedTime : number
+}
+    
+
+
+
+IndexInstancesService {
+    datasetId
+}
+
+1) recupera tutte le query
+
+2) per ogni query
+
+
+DatasetIndexer {
+
+    constructor(queues ... , worker) {}
+
+    indexDataset(datasetId, k) {
+        
+        instantiate DatasetIndexingJob
+
+        valuta tutte le query che ritornano delle istanze
+        per ognuna istanzi un CollectionIndexingJob
+
+        spezza le istanze in tante batch da K offset
+
+        istanzi un KCollectionInstancesIndexingJob
+        
+        this.worker = new Worker ... 
+
+        on worker error, block the worker, clean all
+    }
+
+
+}
+
+InstanceExtractor
+    /* Take a query and checks if there are instances */
+    getInstancesCount(query: Query | string) : number
+    
+    
+    extractInstances({query, offset, totalCount, indexName})
+    loadInstances(instancesDTO, indexName) : Promise<void>
+
+###################
+
+Queue: list of jobs, you can add jobs to a queue
+
+Worker: process jobs from a Queue
+
+//
+new Queue('Datasets')
+Queue.add('index', {datasetId})
+
+//
+new Worker<MyData, MyReturn>('Datasets', async (job: Job) => {
+
+
+
+})
+
+
+
+
+
